@@ -1,0 +1,8 @@
+services:
+  nginx:
+    image: mynginx
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./html:/var/www/html
+      - ./nginx.conf:/etc/nginx/nginx.conf
