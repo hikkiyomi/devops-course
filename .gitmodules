@@ -1,0 +1,6 @@
+[submodule "lab-2/lab-2/task-tracker"]
+	path = lab-2/lab-2/task-tracker
+	url = git@github.com:bogi-lyceya-44/task-tracker.git
+[submodule "lab-2/task-tracker"]
+	path = lab-2/task-tracker
+	url = git@github.com:bogi-lyceya-44/task-tracker.git
