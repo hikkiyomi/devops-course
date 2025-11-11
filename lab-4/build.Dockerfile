@@ -1,0 +1,7 @@
+FROM system as build
+
+COPY task-tracker/go.mod task-tracker/go.sum ./
+RUN go mod download
+
+COPY task-tracker .
+RUN go build -o /app/main cmd/main.go
