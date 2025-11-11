@@ -18,7 +18,7 @@ services:
       retries: 5
 
   task_tracker:
-    image: lab2app
+    image: lab3app
     container_name: task_tracker
     environment:
       POSTGRES_URL: postgres://postgres:postgres@postgres:5432/postgres?sslmode=disable&search_path=task_tracker
