@@ -17,7 +17,24 @@ services:
       timeout: 5s
       retries: 5
 
+  system_builder:
+    build:
+      context: ./
+      dockerfile: system.Dockerfile
+    image: system
+  build_builder:
+    build:
+      context: ./
+      dockerfile: build.Dockerfile
+    image: build
+    depends_on:
+      system_builder:
+        condition: service_completed_successfully
+
   task_tracker:
+    build:
+      context: ./
+      dockerfile: runtime.Dockerfile
     image: runtime
     container_name: task_tracker
     environment:
@@ -32,6 +49,9 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      build_builder:
+        condition: service_completed_successfully
+
 
 volumes:
   pgdata:
