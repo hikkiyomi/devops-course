@@ -1,5 +1,7 @@
 FROM system as build
 
+WORKDIR /app
+
 COPY task-tracker/go.mod task-tracker/go.sum ./
 RUN go mod download
 
