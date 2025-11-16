@@ -1,0 +1,17 @@
+FROM node:24-alpine
+
+WORKDIR /app
+RUN adduser -D appuser
+
+COPY ./react-spring-app/react-frontend/package.json \
+    ./react-spring-app/react-frontend/package-lock.json \
+    ./
+
+RUN npm install
+
+COPY ./react-spring-app/react-frontend .
+RUN chown appuser:appuser -R /app
+
+USER appuser
+
+CMD [ "npm", "run", "start" ]
