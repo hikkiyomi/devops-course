@@ -1,0 +1,16 @@
+FROM maven:3.9.11-eclipse-temurin-17-alpine AS build
+
+WORKDIR /app
+COPY ./react-spring-app/spring-backend .
+RUN mvn clean package -DskipTests
+
+FROM eclipse-temurin:17-alpine AS runtime
+
+WORKDIR /app
+
+RUN adduser -D appuser
+USER appuser
+
+COPY --from=build /app/target/hobbie-backend-0.0.1-SNAPSHOT.jar .
+
+CMD ["java", "-jar", "hobbie-backend-0.0.1-SNAPSHOT.jar"]

@@ -1,0 +1,46 @@
+services:
+  mysql:
+    image: mysql:9.5.0
+    container_name: mysql
+    restart: always
+    env_file:
+      - ./react-spring-app/.env
+    volumes:
+      - mysql:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  backend:
+    image: registry.gitlab.com/matchamoccacino-group/devops-course/backend:${BACKEND_TAG:-latest}
+    container_name: backend
+    restart: always
+    env_file:
+      - ./react-spring-app/.env
+    environment:
+      DB_HOST: mysql
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  frontend:
+    image: registry.gitlab.com/matchamoccacino-group/devops-course/frontend:${FRONTEND_TAG:-latest}
+    container_name: frontend
+    restart: always
+    env_file:
+      - ./react-spring-app/react-frontend/.env
+
+  nginx:
+    image: registry.gitlab.com/matchamoccacino-group/devops-course/nginx:${NGINX_TAG:-latest}
+    container_name: nginx
+    restart: always
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+      - frontend
+
+volumes:
+  mysql:
+

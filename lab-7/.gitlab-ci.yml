@@ -1,0 +1,133 @@
+include:
+  - project: "matchamoccacino-group/devops-templates"
+    ref: v0.0.2
+    file: ".gitlab-ci.yml"
+
+stages:
+  - test
+  - build
+  - deploy
+
+variables:
+  CI_REGISTRY: registry.gitlab.com
+  CI_REGISTRY_IMAGE: $CI_REGISTRY/$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME
+
+test_backend:
+  tags:
+    - local
+  stage: test
+  image: maven:3.9.11-eclipse-temurin-17-alpine
+  script:
+    - cd react-spring-app/spring-backend
+    - mvn test
+
+build_backend_base:
+  tags:
+    - local
+  stage: build
+  extends: .docker_build_template
+  variables:
+    IMAGE_NAME: backend-base
+    DOCKERFILE_PATH: docker/Dockerfile.backend
+    BUILDX_CACHE_REPO: "$CI_REGISTRY_IMAGE/build-cache-backend-base"
+    TARGET: build
+  rules:
+    - changes:
+        - react-spring-app/spring-backend/**/*
+        - docker/Dockerfile.backend
+
+build_backend_runtime:
+  tags:
+    - local
+  stage: build
+  extends: .docker_build_template
+  variables:
+    IMAGE_NAME: backend-runtime
+    DOCKERFILE_PATH: docker/Dockerfile.backend
+    BUILDX_CACHE_REPO: "$CI_REGISTRY_IMAGE/build-cache-backend-runtime"
+    TARGET: runtime
+  rules:
+    - changes:
+        - react-spring-app/spring-backend/**/*
+        - docker/Dockerfile.backend
+  needs:
+    - job: build_backend_base
+
+build_frontend:
+  tags:
+    - local
+  stage: build
+  extends: .docker_build_template
+  variables:
+    IMAGE_NAME: frontend
+    DOCKERFILE_PATH: docker/Dockerfile.frontend
+    BUILDX_CACHE_REPO: "$CI_REGISTRY_IMAGE/build-cache-frontend"
+  rules:
+    - changes:
+        - react-spring-app/react-frontend/**/*
+        - docker/Dockerfile.frontend
+
+build_nginx:
+  tags:
+    - local
+  stage: build
+  extends: .docker_build_template
+  variables:
+    IMAGE_NAME: nginx
+    DOCKERFILE_PATH: docker/Dockerfile.nginx
+    BUILDX_CACHE_REPO: "$CI_REGISTRY_IMAGE/build-cache-nginx"
+  rules:
+    - changes:
+        - nginx/nginx.conf
+        - docker/Dockerfile.nginx
+
+deploy:
+  tags:
+    - local
+  stage: deploy
+  image: docker:28.5.1
+  variables:
+    DOCKER_TLS_CERTDIR: ""
+    GIT_STRATEGY: clone
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
+  script:
+    - export TAG="$CI_COMMIT_SHORT_SHA"
+    - export BACKEND_IMAGE="$CI_REGISTRY_IMAGE/backend:$TAG"
+    - export FRONTEND_IMAGE="$CI_REGISTRY_IMAGE/frontend:$TAG"
+    - export NGINX_IMAGE="$CI_REGISTRY_IMAGE/nginx:$TAG"
+
+    - |
+      if ! docker manifest inspect "$BACKEND_IMAGE" >/dev/null 2>&1; then
+        export BACKEND_TAG="latest"
+      else
+        export BACKEND_TAG="$TAG"
+      fi
+
+    - |
+      if ! docker manifest inspect "$FRONTEND_IMAGE" >/dev/null 2>&1; then
+        export FRONTEND_TAG="latest"
+      else
+        export FRONTEND_TAG="$TAG"
+      fi
+
+    - |
+      if ! docker manifest inspect "$NGINX_IMAGE" >/dev/null 2>&1; then
+        export NGINX_TAG="latest"
+      else
+        export NGINX_TAG="$TAG"
+      fi
+
+    - docker compose pull
+    - docker compose down
+    - docker compose up -d
+    - docker compose ps
+  needs:
+    - job: build_backend_runtime
+      optional: true
+    - job: build_frontend
+      optional: true
+    - job: build_nginx
+      optional: true
+    - job: test_backend
+
