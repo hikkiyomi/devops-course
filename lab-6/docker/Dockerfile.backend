@@ -4,7 +4,7 @@ WORKDIR /app
 COPY ./react-spring-app/spring-backend .
 RUN mvn clean package -DskipTests
 
-FROM eclipse-temurin:17-alpine
+FROM eclipse-temurin:17-alpine AS runtime
 
 WORKDIR /app
 

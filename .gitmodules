@@ -1,3 +1,3 @@
-[submodule "lab-5/react-spring-app"]
-	path = lab-5/react-spring-app
+[submodule "lab-6/react-spring-app"]
+	path = lab-6/react-spring-app
 	url = https://gitlab.com/deusops/projects/react-spring-app.git

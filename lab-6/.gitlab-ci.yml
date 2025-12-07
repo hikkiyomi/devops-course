@@ -1,0 +1,54 @@
+include:
+  - project: "matchamoccacino-group/devops-templates"
+    ref: v0.0.2
+    file: ".gitlab-ci.yml"
+
+stages:
+  - build
+
+variables:
+  CI_REGISTRY: registry.gitlab.com
+  CI_REGISTRY_IMAGE: $CI_REGISTRY/$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME
+
+build_backend_base:
+  tags:
+    - local
+  extends: .docker_build_template
+  variables:
+    IMAGE_NAME: backend-base
+    DOCKERFILE_PATH: docker/Dockerfile.backend
+    BUILDX_CACHE_REPO: "$CI_REGISTRY_IMAGE/build-cache-backend-base"
+    TARGET: build
+  rules:
+    - changes:
+        - react-spring-app/spring-backend/**/*
+        - docker/Dockerfile.backend
+
+build_backend_runtime:
+  tags:
+    - local
+  extends: .docker_build_template
+  variables:
+    IMAGE_NAME: backend-runtime
+    DOCKERFILE_PATH: docker/Dockerfile.backend
+    BUILDX_CACHE_REPO: "$CI_REGISTRY_IMAGE/build-cache-backend-runtime"
+    TARGET: runtime
+  rules:
+    - changes:
+        - react-spring-app/spring-backend/**/*
+        - docker/Dockerfile.backend
+  needs:
+    - job: build_backend_base
+
+build_frontend:
+  tags:
+    - local
+  extends: .docker_build_template
+  variables:
+    IMAGE_NAME: frontend
+    DOCKERFILE_PATH: docker/Dockerfile.frontend
+    BUILDX_CACHE_REPO: "$CI_REGISTRY_IMAGE/build-cache-frontend"
+  rules:
+    - changes:
+        - react-spring-app/react-frontend/**/*
+        - docker/Dockerfile.frontend
